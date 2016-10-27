@@ -11,6 +11,7 @@ app.secret_key = '1234'
 def Google():
 	form = QueryGoogle(request.form)
 	arr = []
+	index = 0
 	if form.validate_on_submit():
 		query = form.QueryGoogle.data
 		response = requests.get('https://www.google.com/search?q='+query+'&oq='+query+'&&start=20').text
@@ -19,6 +20,8 @@ def Google():
 		for titles in title:
 			try:
 				dictionary = {}
+				index +=1
+				dictionary['index#'] = str(index) 
 				dictionary['postTitle'] = titles.find('h3').text
 				dictionary['URL'] = titles.find('a')['href']
 				dictionary['description'] = titles.find('span',attrs={'class':'st'}).text
