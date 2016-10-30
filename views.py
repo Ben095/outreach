@@ -1,3 +1,4 @@
+
 from flask import*
 import requests, json
 from bs4 import BeautifulSoup
@@ -34,19 +35,3 @@ def Google():
 
 
 
-
-
-
-
-
-
-# search_term = 'Ben'
-# sess = dryscrape.Session(base_url = 'http://google.com')
-# sess.set_attribute('auto_load_images', False)
-# sess.visit('/')
-# q = sess.at_xpath('//*[@name="q"]')
-# q.set(search_term)
-# q.form().submit()
-
-# for link in sess.xpath('//a[@href]'):
-#   print link['href']
