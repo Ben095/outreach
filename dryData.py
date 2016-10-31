@@ -4,21 +4,31 @@ from urlparse import urlparse
 from mozscape import Mozscape, MozscapeError
 from time import sleep
 from itertools import cycle
-
+import dryscrape
 
 headers = {
-	'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36',
-
+	'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:27.0) Gecko/20100101 Firefox/27.0',
+	'Cookie':'NID=89=Xx6qVlFq5MyhJC5y4-duwh50KFDhMFDVNUHpAX63aQs1J77jswVAUv1nrxu8ekuZjs9SGvA31VnN5O3wS1b4HQrBDDRKyMgERDrGbr2oWaBps46rBvepRIX5rKTqJJq1BN4ARj2ErQ2jAA; DV=wkE1gHCYxTAcLEWZLaMIXfRxgbYxsAI',
+	'X-Firefox-Spdy':'3.1',
+	'Host':'www.google.com',
+	'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
 }
 
+proxies = {
+	'https':'https://1069jeanbisson:t1nmcsca0z8m@185.152.128.57:10056'
+}
 
-# def UseProxy():
-# 	proxies = {
-# 		'http':'http://89.47.31.145:3128'
-# 	}
-# 	response = requests.get('https://www.google.com/search?num=50&site=&source=hp&q=query&oq=query')
-# 	print response.text
-# UseProxy()
+def UseProxy():
+	# sess = dryscrape.Session(base_url='https://www.google.com')
+	# sess.visit('/')
+	# sleep(2)
+
+
+	#response = requests.get('http://httpbin.org/ip',proxies=proxies)
+	tryGoogle = requests.get('https://www.google.com/search?num=1&site=&source=hp&q=ben',headers=headers, proxies=proxies)
+	print tryGoogle.text
+	#print response.text
+#UseProxy()
 
 
 def GoogleQuery():
@@ -29,9 +39,8 @@ def GoogleQuery():
 
 	arr = []
 	index = 0
-	response = requests.get('https://www.google.com/search?num=10&q=Philippines Loans&oq=Philippines Loans&&start=10',headers=headers).text
+	response = requests.get('https://www.google.com/search?num=1&q=Philippines Loans&oq=Philippines Loans&&start=10',headers=headers,proxies=proxies).text
 	soup = BeautifulSoup(response)
-	#print soup
 	title = soup.findAll('div',attrs={'class':'g'})
 	for titles in title:
 		try:
@@ -52,14 +61,14 @@ def GoogleQuery():
 			continue
 	return arr
 
-
+#GoogleQuery()
 def TwitterData():
 	outputTwitterArr = []
 	arr = GoogleQuery()
 	for items in arr:
 		sleep(5)
 		URLS = items['root_domain']
-		response = requests.get('https://www.google.com/search?num=1&q=site:twitter.com%20'+URLS).text
+		response = requests.get('https://www.google.com/search?num=1&q=site:twitter.com%20'+URLS, headers=headers,proxies=proxies).text
 		soup = BeautifulSoup(response)
 		title = soup.findAll('div',attrs={'class':'g'})
 		for titles in title:
@@ -96,7 +105,7 @@ def GooglePlusData():
 	for items in arr:
 		URLS = items['root_domain']
 		#print URLS
-		response = requests.get('https://www.google.com/search?num=1&q=site:plus.google.com+'+str(URLS)).text
+		response = requests.get('https://www.google.com/search?num=1&q=site:plus.google.com+'+str(URLS),headers=headers,proxies=proxies).text
 		soup = BeautifulSoup(response)
 		title = soup.findAll('div',attrs={'class':'g'})
 		for titles in title:
@@ -115,7 +124,7 @@ def scrapeGooglePlus():
 	removeDuplicates = list(set(arr))
 	for visitFacebookPage in removeDuplicates[:1]:
 		dictionary = {}
-		TwitterCount = requests.get('https://plusone.google.com/_/+1/fastbutton?url='+visitFacebookPage).text
+		TwitterCount = requests.get('https://plusone.google.com/_/+1/fastbutton?url='+visitFacebookPage,headers=headers,proxies=proxies).text
 		soup = BeautifulSoup(TwitterCount)
 		googleCount = soup.find('div',attrs={'id':'aggregateCount'}).text
 		dictionary['googleplus_shares'] = googleCount
@@ -125,6 +134,33 @@ def scrapeGooglePlus():
 		dictionary['googleplus_uRL'] = visitFacebookPage
 		googlePlusArr.append(dictionary)
 	return googlePlusArr
+
+
+def LinkedInData():
+	arr = GoogleQuery()
+	linkedInAdditionalData = []
+	for items in arr[:1]:
+		sleep(5)
+		URLS = items['root_domain']
+		print URLS
+		response = requests.get('https://www.google.com/search?num=1&site=&source=hp&q=site:www.linkedin.com+'+URLS,headers=headers,proxies=proxies).text
+		soup = BeautifulSoup(response)
+		title = soup.findAll('div',attrs={'class':'g'})
+		for titles in title:
+			dictionary = {}
+			dictionary['meta_title'] = titles.find('h3').text
+			dictionary['full_url'] = titles.find('a')['href']
+			rootDomain = dictionary['full_url'].replace('/url?q=','')
+			parsed_uri = urlparse(rootDomain)
+			dictionary['rootDomain'] = rootDomain
+			groupURL = dictionary['rootDomain'].split('&')[0]
+			linkedInAdditionalData.append(groupURL)
+	return linkedInAdditionalData
+
+
+		
+
+
 
 def FacebookData():
 	##### Facebook Data Function()##### -> Loops through ALL the rootDomain URLS retrieved from first function
@@ -138,7 +174,7 @@ def FacebookData():
 		sleep(5)
 		URLS = items['root_domain']
 		print 'https://www.google.com/search?num=1&q=site:facebook.com '+URLS+'&&start=10'
-		response = requests.get('https://www.google.com/search?num=1&q=site:facebook.com '+URLS+'&&start=10').text
+		response = requests.get('https://www.google.com/search?num=1&q=site:facebook.com '+URLS+'&&start=10',headers=headers,proxies=proxies).text
 		soup = BeautifulSoup(response)
 		title = soup.findAll('div',attrs={'class':'g'})
 		for titles in title:
@@ -232,16 +268,16 @@ def TryCred():
 		print zipList[-1]['key']
 
 
+
 def Clients():
-	arr = GoogleQuery()
+	A = GoogleQuery()
 	Mozarr = []
 	listO = open('credentials.json')
 	B = json.load(listO)
-	A = arr[:50]
 	zip_list = zip(A, cycle(B)) if len(A) > len(B) else zip(cycle(A), B)
 	for zipList in zip_list:
 		try:
-			print zipList[-1]['key'], zipList[-1]['value']
+			#print zipList[-1]['key'], zipList[-1]['value']
 		 	values = zipList[-1]['key'] + zipList[-1]['value']
 		 	print zipList[0]['rootDomain']
 			client = Mozscape(zipList[-1]['key'],zipList[-1]['value'])
@@ -253,10 +289,11 @@ def Clients():
 			internal_dictionary['DA'] = authorities['pda']
 			internal_dictionary['MozRank'] = Links['umrp']
 			internal_dictionary['links'] = Links['uid']
-			print internal_dictionary['backURL']
+			#print internal_dictionary['backURL']
 			Mozarr.append(internal_dictionary)
 		except MozscapeError:
 			sleep(11)
 			continue
 	with open('mozscapedata.json','wb') as outfile:
 		json.dump(Mozarr,outfile,indent=4)
+Clients()
