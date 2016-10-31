@@ -29,7 +29,7 @@ def GoogleQuery():
 
 	arr = []
 	index = 0
-	response = requests.get('https://www.google.com/search?num=1&q=Philippines Loans&oq=Philippines Loans&&start=10',headers=headers).text
+	response = requests.get('https://www.google.com/search?num=10&q=Philippines Loans&oq=Philippines Loans&&start=10',headers=headers).text
 	soup = BeautifulSoup(response)
 	#print soup
 	title = soup.findAll('div',attrs={'class':'g'})
@@ -90,8 +90,42 @@ def TwitterScraper():
 	return arr
 
 
-	
-			
+def GooglePlusData():
+	arr = GoogleQuery()
+	googleAdditionalData = []
+	for items in arr:
+		URLS = items['root_domain']
+		#print URLS
+		response = requests.get('https://www.google.com/search?num=1&q=site:plus.google.com+'+str(URLS)).text
+		soup = BeautifulSoup(response)
+		title = soup.findAll('div',attrs={'class':'g'})
+		for titles in title:
+			dictionary = {}
+			dictionary['meta_title'] = titles.find('h3').text
+			dictionary['full_url'] = titles.find('a')['href']
+			rootDomain = dictionary['full_url'].replace('/url?q=','')
+			parsed_uri = urlparse(rootDomain)
+			dictionary['rootDomain'] = rootDomain
+			googleAdditionalData.append(dictionary['rootDomain'].split('&')[0])
+	return googleAdditionalData
+
+def scrapeGooglePlus():
+	googlePlusArr = []
+	arr = GooglePlusData()
+	removeDuplicates = list(set(arr))
+	for visitFacebookPage in removeDuplicates[:1]:
+		dictionary = {}
+		TwitterCount = requests.get('https://plusone.google.com/_/+1/fastbutton?url='+visitFacebookPage).text
+		soup = BeautifulSoup(TwitterCount)
+		googleCount = soup.find('div',attrs={'id':'aggregateCount'}).text
+		dictionary['googleplus_shares'] = googleCount
+		response = requests.get(visitFacebookPage).text
+		soup = BeautifulSoup(response)
+		dictionary['googleplus_followers'] = soup.find('span',attrs={'class':'BOfSxb'}).text
+		dictionary['googleplus_uRL'] = visitFacebookPage
+		googlePlusArr.append(dictionary)
+	return googlePlusArr
+
 def FacebookData():
 	##### Facebook Data Function()##### -> Loops through ALL the rootDomain URLS retrieved from first function
 	####----> Only returns ONE result per URL -> Relying on google scraper!
