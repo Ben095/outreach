@@ -13,11 +13,12 @@
 	      {% endif %}
 	    </span>
  	</p>
- 	<button class="btn btn-success" type="submit">Create!</button>
+ 	<button class="btn btn-success" type="submit">Search Google!</button>
  </form>
- {% for items in arr %}
- 	<li> Title : {{items['postTitle']}} </li>
- 	<li> URL : {{items['URL']}} </li>
+ {% for items in arr %} 
+ 	<li> {{items}} </li>
+ 	<li> Title : {{items['meta_title']}} </li>
+ 	<li> URL : {{items['full_url']}} </li>
  	<li> Description : {{items['description']}} </li>
  {% endfor %}
 {% endblock %}

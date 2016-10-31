@@ -12,20 +12,26 @@ headers = {
 }
 
 
-def UseProxy():
-	proxies = {
-		'https':'http://89.47.31.145:3128'
-	}
-	response = requests.get('http://httpbin.org/ip',proxies=proxies)
-	print response.text
-UseProxy()
+# def UseProxy():
+# 	proxies = {
+# 		'http':'http://89.47.31.145:3128'
+# 	}
+# 	response = requests.get('https://www.google.com/search?num=50&site=&source=hp&q=query&oq=query')
+# 	print response.text
+# UseProxy()
+
+
 def GoogleQuery():
+    #################-------QUERIES GOOGLE FIRST STEP-------------######### Gets 10 results.
+    ### ON QUERY NO TIMER NEEDED##########
+    ### GoogleQuery() function returns an array of dictionary with crucial information
+    ### Save google data in database (FIRST STEP!!!!!) #######
 
 	arr = []
 	index = 0
 	response = requests.get('https://www.google.com/search?num=1&q=Philippines Loans&oq=Philippines Loans&&start=10',headers=headers).text
 	soup = BeautifulSoup(response)
-	print soup
+	#print soup
 	title = soup.findAll('div',attrs={'class':'g'})
 	for titles in title:
 		try:
@@ -39,12 +45,113 @@ def GoogleQuery():
 			dictionary['rootDomain'] = rootDomain
 			domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
 			dictionary['root_domain'] = domain
-			print dictionary['root_domain']
+			#print dictionary['root_domain']
 			dictionary['description'] = titles.find('span',attrs={'class':'st'}).text
 			arr.append(dictionary)
 		except AttributeError:
 			continue
 	return arr
+
+
+def TwitterData():
+	outputTwitterArr = []
+	arr = GoogleQuery()
+	for items in arr:
+		sleep(5)
+		URLS = items['root_domain']
+		response = requests.get('https://www.google.com/search?num=1&q=site:twitter.com%20'+URLS).text
+		soup = BeautifulSoup(response)
+		title = soup.findAll('div',attrs={'class':'g'})
+		for titles in title:
+			dictionary = {}
+			dictionary['meta_title'] = titles.find('h3').text
+			dictionary['full_url'] = titles.find('a')['href']
+			rootDomain = dictionary['full_url'].replace('/url?q=','')
+			parsed_uri = urlparse(rootDomain)
+			dictionary['rootDomain'] = rootDomain
+			parseGroupURL = dictionary['rootDomain'].split('&sa')[0]
+			print parseGroupURL
+			outputTwitterArr.append(parseGroupURL)
+	return outputTwitterArr
+
+def TwitterScraper():
+	arr = []
+	DataList = TwitterData()
+	removeDuplicates = list(set(DataList))
+	for items in removeDuplicates:
+		dictionary = {}
+		response = requests.get(items).text
+		soup = BeautifulSoup(response)
+		Followers = soup.find('span',attrs={'class':'ProfileNav-value'}).text
+		dictionary['twitter_profile_followers'] = Followers
+		dictionary['twitter_url'] = items
+		dictionary['twitter_shares'] = "None"
+		arr.append(dictionary)
+	return arr
+
+
+	
+			
+def FacebookData():
+	##### Facebook Data Function()##### -> Loops through ALL the rootDomain URLS retrieved from first function
+	####----> Only returns ONE result per URL -> Relying on google scraper!
+	####-----> Has a timer per each URL query 5 seconds!
+	###-->> Could possibly use Proxy in this case in near future!
+	###--->> This returns me the facebook group URL!
+	arr = GoogleQuery()
+	facebookURLAdditionalData = []
+	for items in arr:
+		sleep(5)
+		URLS = items['root_domain']
+		print 'https://www.google.com/search?num=1&q=site:facebook.com '+URLS+'&&start=10'
+		response = requests.get('https://www.google.com/search?num=1&q=site:facebook.com '+URLS+'&&start=10').text
+		soup = BeautifulSoup(response)
+		title = soup.findAll('div',attrs={'class':'g'})
+		for titles in title:
+			dictionary = {}
+			dictionary['meta_title'] = titles.find('h3').text
+			dictionary['full_url'] = titles.find('a')['href']
+			rootDomain = dictionary['full_url'].replace('/url?q=','')
+			parsed_uri = urlparse(rootDomain)
+			dictionary['rootDomain'] = rootDomain
+			parseGroupURL = dictionary['rootDomain'].split('&sa')[0]
+			groupURL = parseGroupURL.replace('%3F','?').replace('%3D','=')
+			facebookURLAdditionalData.append(groupURL)
+	return facebookURLAdditionalData
+
+
+def FacebookScraper():
+	#### This function scrapes and puts everything together for facebook field
+	#### ---> Initates a new dictionary with {facebookshares:data,'facebookprofile':'data','profilelikes':'data'}
+	#### ---> three fields!
+	#### ----> This function is the last step for facebook to be shown in flask front-end
+	#### -----> removes duplicates and possible conflict on any data and returns the Cleanest version for each group
+	#### ----> This function returns an array with required field for social platform 'facebook'
+	arr = []
+	DataList = FacebookData()
+	removeDuplicates = list(set(DataList))
+	for visitFacebookPage in removeDuplicates:
+		try:
+			dictionary = {}
+			facebookCount = requests.get('http://graph.facebook.com/?id='+URLS).text
+			jsonObj = json.loads(facebookCount)
+			facebookC = jsonObj['og_object'], jsonObj['share'], jsonObj['id']
+			response = requests.get(visitFacebookPage).text
+			soup = BeautifulSoup(response)
+			likes = soup.find('div',attrs={'class':'_4-u2 _5tsm _4-u8'}).text
+			dictionary['facebook_shares'] = jsonObj['share']
+			dictionary['facebook_profile_url'] = visitFacebookPage
+			dictionary['facebook_profile_likes'] = likes.encode('ascii','ignore').strip()
+			arr.append(dictionary)
+		except AttributeError:
+			pass
+	return arr
+#FacebookScraper()
+
+
+
+
+
 
 def SocialMediaCount():
 	arr = GoogleQuery()
@@ -62,27 +169,7 @@ def SocialMediaCount():
 		loadAsJsonObj = json.loads(parsedObj)
 		linkedinCount = loadAsJsonObj['count']
 
-def FacebookData():
-	arr = GoogleQuery()
-	for items in arr[:1]:
-		URLS = items['root_domain']
-		facebookCount = requests.get('http://graph.facebook.com/?id='+URLS).text
-		jsonObj = json.loads(facebookCount)
-		facebookC = jsonObj['og_object'], jsonObj['share'], jsonObj['id']
-		response = requests.get('https://www.google.com/search?num=3&q=site:facebook.com '+URLS+'&&start=10').text
-		soup = BeautifulSoup(response)
-		title = soup.findAll('div',attrs={'class':'g'})
-		for titles in title:
-			dictionary = {}
-			dictionary['meta_title'] = titles.find('h3').text
-			dictionary['full_url'] = titles.find('a')['href']
-			rootDomain = dictionary['full_url'].replace('/url?q=','')
-			parsed_uri = urlparse(rootDomain)
-			dictionary['rootDomain'] = rootDomain
-			parseGroupURL = dictionary['rootDomain'].split('&sa')[0]
-			groupURL = parseGroupURL.replace('%3F','?').replace('%3D','=')
-			print groupURL
-#FacebookData()		
+	
 
 
 def addClients():
