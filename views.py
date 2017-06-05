@@ -21,7 +21,7 @@ headers = {
 	'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
 }
 proxies = {
-	'https':'https://1069jeanbisson:t1nmcsca0z8m@185.152.128.57:10056'
+	''
 }
 @app.route('/google', methods=['GET','POST'])
 def querygoogle():
